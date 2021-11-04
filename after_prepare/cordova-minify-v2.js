@@ -15,16 +15,10 @@ var fs = require('fs'),
     },
     cssMinifier = new CleanCSS(cssOptions),
 
-    rootDir = process.argv[2],
-    platformPath = path.join(rootDir, 'platforms'),
-    platform = process.env.CORDOVA_PLATFORMS,
-    cliCommand = process.env.CORDOVA_CMDLINE,
-
     debug = false,
 
     htmlOptions = {
         removeAttributeQuotes: true,
-        removeComments: true,
         minifyJS: true,
         minifyCSS: cssOptions,
         collapseWhitespace: true,
@@ -38,18 +32,11 @@ var fs = require('fs'),
     notProcessedCounter = 0,
     pendingCounter = 0,
 
-    hasStartedProcessing = false,
-    processRoot = true,
-    isRelease = true;
-    // isRelease = (cliCommand.indexOf('--release') > -1); // comment the above line and uncomment this line to turn the hook on only for release
+    hasStartedProcessing = false
 
-if (!isRelease) {
-    return;
-}
-
-console.log('cordova-minify STARTING - minifying your js, css, html, and images. Sit back and relax!');
 
 function processFiles(dir, _noRecursive) {
+    console.log('Dir : ' + dir)
     fs.readdir(dir, function (err, list) {
         if (err) {
             // console.error('processFiles - reading directories error: ' + err);
@@ -57,6 +44,7 @@ function processFiles(dir, _noRecursive) {
         }
         list.forEach(function(file) {
             file = path.join(dir, file);
+            console.log('Processing ' + file)
             fs.stat(file, function(err, stat) {
                 hasStartedProcessing = true;
                 if (stat.isDirectory()) {
@@ -201,29 +189,35 @@ function compress(file, dir) {
 }
 
 function checkIfFinished() {
-    if (hasStartedProcessing && pendingCounter == 0) console.log('\x1b[36m%s %s %s\x1b[0m', successCounter + (successCounter == 1 ? ' file ' : ' files ') + 'minified.', errorCounter + (errorCounter == 1 ? ' file ' : ' files ') + 'had errors.', notProcessedCounter + (notProcessedCounter == 1 ? ' file was ' : ' files were ') + 'not processed.');
-    else setTimeout(checkIfFinished, 10);
+    if (hasStartedProcessing && pendingCounter == 0) {
+        console.log('\x1b[36m%s %s %s\x1b[0m', successCounter + (successCounter == 1 ? ' file ' : ' files ') + 'minified.', errorCounter + (errorCounter == 1 ? ' file ' : ' files ') + 'had errors.', notProcessedCounter + (notProcessedCounter == 1 ? ' file was ' : ' files were ') + 'not processed.');
+    } else {
+        setTimeout(checkIfFinished, 10);
+    }
 }
 
+module.exports = function(context) {
+    console.log('cordova-minify STARTING - minifying your js, css, html, and images. Sit back and relax!');
 
-switch (platform) {
-    case 'android':
-        platformPath = path.join(platformPath, platform, "assets", "www");
-        break;
-    case 'ios':
-        platformPath = path.join(platformPath, platform, "www");
-        break;
-    default:
-        console.error('Hook currently supports only Android and iOS');
-        return;
+    for (const platform of context.opts.platforms) {
+        switch (platform) {
+            case 'android':
+            {
+                const path_ = path.join("platforms", "android", "app", "src", "main", "assets", "www", "plugins");
+                processFiles(path_, false);
+            }
+            break;
+            case 'ios':
+            {
+                const path_ = path.join("platforms", "ios", "www", "plugins");
+                processFiles(path_, false);
+            }
+            break;
+            default:
+                console.error('Hook currently supports only Android and iOS : ' + context.opts.platforms.join(', '));
+                return;
+        }
+    }
+
+    checkIfFinished();
 }
-
-var foldersToProcess = ['javascript', 'style', 'media', 'js', 'img', 'css', 'html'];
-
-if (processRoot) processFiles(platformPath, true);
-
-foldersToProcess.forEach(function(folder) {
-    processFiles(path.join(platformPath, folder));
-});
-
-checkIfFinished();
