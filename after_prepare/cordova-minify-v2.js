@@ -3,29 +3,8 @@
 var fs = require('fs'),
     path = require('path'),
     UglifyJS = require('uglify-js'),
-    CleanCSS = require('clean-css'),
-    imagemin = require('imagemin'),
-    imageminSvgo = require('imagemin-svgo'),
-    imageminJpegtran = require('imagemin-jpegtran'),
-    imageminGifsicle = require('imagemin-gifsicle'),
-    imageminOptipng = require('imagemin-optipng'),
-    htmlMinify = require('html-minifier').minify,
-    cssOptions = {
-        keepSpecialComments: 0
-    },
-    cssMinifier = new CleanCSS(cssOptions),
 
     debug = false,
-
-    htmlOptions = {
-        removeAttributeQuotes: true,
-        minifyJS: true,
-        minifyCSS: cssOptions,
-        collapseWhitespace: true,
-        conservativeCollapse: true,
-        removeComments: true,
-        removeEmptyAttributes: true
-    },
 
     successCounter = 0,
     errorCounter = 0,
@@ -79,106 +58,6 @@ function compress(file, dir) {
                 successCounter++;
                 fs.writeFileSync(file, result.code, 'utf8');
                 (debug) && console.log('Optimized: ' + file);
-            }
-            break;
-        case '.css':
-            (debug) && console.log('Minifying CSS File: ' + file);
-            var source = fs.readFileSync(file, 'utf8');
-            if (!source || source.length == 0) {
-                errorCounter++;
-                console.error('Encountered an empty file: ' + file);
-            }
-            else {
-                var result = cssMinifier.minify(source).styles;
-                if (!result || result.length == 0) {
-                    errorCounter++;
-                    console.error('\x1b[31mEncountered an error minifying a file: %s\x1b[0m', file);
-                }
-                else {
-                    successCounter++;
-                    fs.writeFileSync(file, result, 'utf8');
-                    (debug) && console.log('Optimized: ' + file);
-                }
-            }
-            break;
-        // Image options https://github.com/imagemin/imagemin
-        case '.svg':
-            (debug) && console.log('Minifying SVG File: ' + file);
-            pendingCounter++;
-            // svgGo options https://www.npmjs.com/package/imagemin-svgo#options
-            imagemin([file], dir, {use: [imageminSvgo()]}).then((files) => {
-                if (!files || files.length == 0) {
-                    errorCounter++;
-                    console.error('\x1b[31mEncountered an error minifying a file: %s\x1b[0m', file);
-                }
-                else {
-                    (debug) && console.log('Optimized: ' + file);
-                }
-                pendingCounter--;
-            });
-            successCounter++;
-            break;
-        case '.gif':
-            (debug) && console.log('Minifying GIF File: ' + file);
-            pendingCounter++;
-            // GifSicle options https://www.npmjs.com/package/imagemin-gifsicle#options
-            imagemin([file], dir, {use: [imageminGifsicle({interlaced: true})]}).then((files) => {
-                if (!files || files.length == 0) {
-                    errorCounter++;
-                    console.error('\x1b[31mEncountered an error minifying a file: %s\x1b[0m', file);
-                }
-                else {
-                    (debug) && console.log('Optimized: ' + file);
-                }
-                pendingCounter--;
-            });
-            successCounter++;
-            break;
-        case '.png':
-            (debug) && console.log('Minifying PNG File: ' + file);
-            pendingCounter++;
-            // OptiPNG options https://www.npmjs.com/package/imagemin-optipng#options
-            imagemin([file], dir, {use: [imageminOptipng({optimizationLevel: 2})]}).then((files) => {
-                if (!files || files.length == 0) {
-                    errorCounter++;
-                    console.error('\x1b[31mEncountered an error minifying a file: %s\x1b[0m', file);
-                }
-                else {
-                    (debug) && console.log('Optimized: ' + file);
-                }
-                pendingCounter--;
-            });
-            successCounter++;
-            break;
-        case '.jpg':
-        case '.jpeg':
-            (debug) && console.log('Minifying JPEG File: ' + file);
-            pendingCounter++;
-            // jpegTran options https://www.npmjs.com/package/imagemin-jpegtran#options
-            imagemin([file], dir, {use: [imageminJpegtran({progressive: true})]}).then((files) => {
-                pendingCounter--;
-                (debug) && console.log('Optimized: ' + file);
-            });
-            successCounter++;
-            break;
-        case '.html':
-            (debug) && console.log('Minifying HTML File: ' + file);
-            var source = fs.readFileSync(file, 'utf8');
-            if (!source || source.length == 0) {
-                errorCounter++;
-                console.error('Encountered an empty file: ' + file);
-            }
-            else {
-                var result = htmlMinify(source, htmlOptions);
-                if (!result || result.length == 0) {
-                    errorCounter++;
-                    console.error('\x1b[31mEncountered an error minifying a file: %s\x1b[0m', file);
-                }
-                else {
-                    successCounter++;
-                    fs.writeFileSync(file, result, 'utf8');
-                    (debug) && console.log('Optimized: ' + file);
-                }
             }
             break;
         default:

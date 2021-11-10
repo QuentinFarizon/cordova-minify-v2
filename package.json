@@ -13,14 +13,7 @@
     "cordova-minify-v2"
   ],
   "dependencies" : {
-    "clean-css": "3.4.x",
-    "html-minifier": "2.1.x",
-    "imagemin": "5.2.x",
-    "imagemin-gifsicle": "5.1.x",
-    "imagemin-jpegtran": "5.0.x",
-    "imagemin-optipng": "5.1.x",
-    "imagemin-svgo": "5.1.x",
-    "uglify-js": "2.6.x"
+    "uglify-js": "2.8.29"
   },
   "author": "Adam Erny",
   "license": "MIT",
