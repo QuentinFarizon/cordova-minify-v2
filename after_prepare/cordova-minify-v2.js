@@ -41,6 +41,13 @@ function compress(file, dir) {
     switch(ext.toLowerCase()) {
         case '.js':
             (debug) && console.log('Compressing/Uglifying JS File: ' + file);
+            if (file.includes('cordova-plugin-ble-central/www/ble.js')) {
+                // TODO Uglify-js does not manage ES6 files
+                // TODO terser does, but it has a different API
+                // TODO https://www.npmjs.com/package/terser
+                (debug) && console.log('Skipped (ES6): ' + file);
+                break;
+            }
             var result = UglifyJS.minify(file, {
                 compress: {
                     dead_code: true,
