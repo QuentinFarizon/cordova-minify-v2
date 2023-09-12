@@ -2,7 +2,7 @@
 
 var fs = require('fs'),
     path = require('path'),
-    UglifyJS = require('uglify-js'),
+    UglifyJS = require('terser'),
 
     debug = false,
 
@@ -41,14 +41,8 @@ function compress(file, dir) {
     switch(ext.toLowerCase()) {
         case '.js':
             (debug) && console.log('Compressing/Uglifying JS File: ' + file);
-            if (file.includes('cordova-plugin-ble-central/www/ble.js') || file.includes('cordova-plugin-firebasex/www/firebase.js')) {
-                // TODO Uglify-js does not manage ES6 files
-                // TODO terser does, but it has a different API
-                // TODO https://www.npmjs.com/package/terser
-                (debug) && console.log('Skipped (ES6): ' + file);
-                break;
-            }
-            var result = UglifyJS.minify(file, {
+            const content = fs.readFileSync(file);
+            UglifyJS.minify(content.toString('utf-8'), {
                 compress: {
                     dead_code: true,
                     loops: true,
@@ -56,16 +50,20 @@ function compress(file, dir) {
                     keep_fargs: true,
                     keep_fnames: true
                 }
-            });
-            if (!result || !result.code || result.code.length == 0) {
+            }).then(result => {
+                if (!result || !result.code || result.code.length == 0) {
+                    errorCounter++;
+                    console.error('\x1b[31mEncountered an error minifying a file: %s\x1b[0m', file);
+                }
+                else {
+                    successCounter++;
+                    fs.writeFileSync(file, result.code, 'utf8');
+                    (debug) && console.log('Optimized: ' + file);
+                }
+            }).catch(error => {
                 errorCounter++;
                 console.error('\x1b[31mEncountered an error minifying a file: %s\x1b[0m', file);
-            }
-            else {
-                successCounter++;
-                fs.writeFileSync(file, result.code, 'utf8');
-                (debug) && console.log('Optimized: ' + file);
-            }
+            })
             break;
         default:
             console.error('Encountered file with ' + ext + ' extension - not compressing.');

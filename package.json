@@ -13,7 +13,7 @@
     "cordova-minify-v2"
   ],
   "dependencies" : {
-    "uglify-js": "2.8.29"
+    "terser": "5.19.4"
   },
   "author": "Adam Erny",
   "license": "MIT",
